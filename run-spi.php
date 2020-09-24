@@ -3,9 +3,16 @@
 $config = json_decode(file_get_contents('config.json'));
 $users = $config->users;
 
-// echo '<pre>';
+$allRes = [];
 foreach ($users as $user) {
-    // echo '================'.$user.'================';
+    $res = array(
+        'time'          => date('Y.m.d H:i:s'),
+        'user'          => $user->account,
+        'id'            => $user->id,
+        'last entry'    => array(),
+        'database'      => array(),
+        'result'        => ''
+    );
 
     $url = 'http://velociraptor.ndhu.edu.tw/MSalary/DeskTopDefault1.aspx';
     $ckfile = tempnam('/tmp', 'CURLCOOKIE');
@@ -113,7 +120,7 @@ foreach ($users as $user) {
                 $html = curl_exec($ch);
 
                 if ($html === false) {
-                    echo date('Y/m/d H:i:s').' An error has occurred: ' . curl_error($ch);
+                    $res['result'] = 'An error has occurred: ' . curl_error($ch);
                 } else {
                     include_once('./simplehtmldom/simple_html_dom.php');
                     $dom = new simple_html_dom();
@@ -123,16 +130,13 @@ foreach ($users as $user) {
                     $lists = $dom->getElementById('PrintArea');
 
                     $last_entry = $lists->nodes[0]->nodes[1];
-                    $last_date  = $last_entry->nodes[0]->nodes[0]->innertext;
-                    $last_name  = $last_entry->nodes[2]->nodes[0]->innertext;
-                    $last_pay   = $last_entry->nodes[3]->innertext;
+                    $res['last entry'] = array(
+                        'date' => $last_entry->nodes[0]->nodes[0]->innertext,
+                        'name' => $last_entry->nodes[2]->nodes[0]->innertext,
+                        'pay'  => $last_entry->nodes[3]->innertext
+                    );
 
                     $tg_id = $user->id;
-
-                    // echo 'Last entry information:';
-                    // echo 'Date: '.$last_date.'<br>';
-                    // echo 'Detail: '.$last_name.'<br>';
-                    // echo 'Pay: '.$last_pay.'<br>';
 
                     $DBHOST = $config->db->host;
                     $DBUSER = $config->db->user;
@@ -149,19 +153,18 @@ foreach ($users as $user) {
                     $stmt->fetch();
                     $stmt->close();
 
-                    // echo 'Database information:';
-                    // echo 'Date: '.$db_last_date.'<br>';
-                    // echo 'Detail: '.$db_last_name.'<br>';
-                    // echo 'Pay: '.$db_last_pay .'<br>';
-
+                    $res['database'] = array(
+                        'date' => $db_last_date,
+                        'name' => $db_last_name,
+                        'pay'  => $db_last_pay 
+                    );
+                    
                     // compare two entry is different or not
-                    if (!strcmp($last_date, $db_last_date) &&
-                        !strcmp($last_name, $db_last_name) &&
-                        !strcmp($last_pay,  $db_last_pay)) {
-                        echo date('Y/m/d H:i:s').' No new entry.';
+                    if ($res['last entry'] === $res['database']) {
                         file_put_contents('cronlog.txt', date('Y/m/d H:i:s').' No new entry.'.PHP_EOL, FILE_APPEND);
+                        $res['result'] = 'No new entry.';
                     } else {
-                        echo date('Y/m/d H:i:s').' A new entry found.';
+                        $res['result'] = 'A new entry found.';
 
                         // update database
                         $query = 'UPDATE user_info SET last_date=? , last_name=?, last_pay=? WHERE tg_id=?';
@@ -178,18 +181,21 @@ foreach ($users as $user) {
                     $conn->close();
                 }
             } else {
-                echo date('Y/m/d H:i:s').' Getting data page failed.';
+                $res['result'] = 'Getting data page failed.';
             }
         } else {
-            echo date('Y/m/d H:i:s').' Submitting login page failed.';
+            $res['result'] = 'Submitting login page failed.';
         }
     } else {
-        echo date('Y/m/d H:i:s').' Getting login page failed.';
+        $res['result'] = 'Getting login page failed.';
     }
     curl_close($ch);
 
     // delete tmp cookie file
     unlink($ckfile);
+
+    $allRes[] = $res;
 }
 
-// echo '</pre>';
+echo json_encode($allRes, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+
