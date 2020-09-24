@@ -171,7 +171,7 @@ foreach ($users as $user) {
                         $stmt->close();
 
                         // connecting to telegram bot
-                        file_get_contents('https://lusw.dev/tg/api/bot/pay/460873343/'.$last_date.'/'.$last_name.'/'.$last_pay);
+                        file_get_contents('https://lusw.dev/tg/api/bot/pay/'.$tg_id.'/'.$last_date.'/'.$last_name.'/'.$last_pay);
                         file_put_contents('cronlog.txt', date('Y/m/d H:i:s').' A new entry find.\r\n', FILE_APPEND);
                     }
                     
