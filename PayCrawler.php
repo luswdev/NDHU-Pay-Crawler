@@ -1,6 +1,8 @@
 <?php
-class PayCrawler {
-    private $baseURL;
+class PayCrawler 
+{
+    const BASE_URL ='http://velociraptor.ndhu.edu.tw/MSalary';
+
     private $loginPage;
     private $dataPage;
 
@@ -12,11 +14,11 @@ class PayCrawler {
 
     public $errorMsg;
 
-    public function __construct (int $_id, string $_account) {
+    public function __construct (int $_id, string $_account) 
+    {
         $this->tgId      = $_id;
         $this->account   = $_account;
 
-        $this->baseURL   = 'http://velociraptor.ndhu.edu.tw/MSalary';
         $this->loginPage = '/DeskTopDefault1.aspx';
         $this->dataPage  = '/fmSary03.aspx';
 
@@ -27,15 +29,17 @@ class PayCrawler {
         $this->errorMsg  = '';
     }
 
-    public function __destruct () {
+    public function __destruct () 
+    {
         curl_close($this->ch);
         unlink($this->ckfile);
     }
 
-    private function getLoginPage () {
+    private function getLoginPage () 
+    {
         // setup curl information
         curl_setopt_array($this->ch, [
-            CURLOPT_URL            => $this->baseURL.$this->loginPage,
+            CURLOPT_URL            => self::BASE_URL.$this->loginPage,
             CURLOPT_COOKIEFILE     => $this->ckfile,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_RETURNTRANSFER => true,
@@ -47,7 +51,8 @@ class PayCrawler {
         return $html;
     }
 
-    public function login (string $_password) {
+    public function login (string $_password) 
+    {
         $html = $this->getLoginPage();
 
         if ($html === false) {
@@ -57,18 +62,18 @@ class PayCrawler {
 
         // login page information
         $postfields = http_build_query([
-            '__EVENTTARGET'         => 'password',
-            '__EVENTARGUMENT'       => '',
-            '__VIEWSTATE'           => $this->parseVerified('__VIEWSTATE', $html),
-            '__VIEWSTATEGENERATOR'  => $this->parseVerified('__VIEWSTATEGENERATOR', $html),
-            'email'                 => $this->account,
-            'password'              => $_password,
+            '__EVENTTARGET'        => 'password',
+            '__EVENTARGUMENT'      => '',
+            '__VIEWSTATE'          => $this->parseVerified('__VIEWSTATE', $html),
+            '__VIEWSTATEGENERATOR' => $this->parseVerified('__VIEWSTATEGENERATOR', $html),
+            'email'                => $this->account,
+            'password'             => $_password,
         ]);
         
         curl_setopt_array($this->ch, [
-            CURLOPT_REFERER     => $this->baseURL.$this->loginPage,
-            CURLOPT_POST        => true,
-            CURLOPT_POSTFIELDS  => $postfields,
+            CURLOPT_REFERER    => self::BASE_URL.$this->loginPage,
+            CURLOPT_POST       => true,
+            CURLOPT_POSTFIELDS => $postfields,
         ]);
 
         // submitting the login form
@@ -81,9 +86,10 @@ class PayCrawler {
         return $html;
     }
 
-    private function getDataPage () {
+    private function getDataPage () 
+    {
         curl_setopt_array($this->ch, [
-            CURLOPT_URL  => $this->baseURL.$this->dataPage,
+            CURLOPT_URL  => self::BASE_URL.$this->dataPage,
             CURLOPT_POST => false,
         ]);
 
@@ -93,7 +99,8 @@ class PayCrawler {
         return $html;
     }
 
-    public function getData () {
+    public function getData () 
+    {
         $html = $this->getDataPage();
 
         if ($html === false) {
@@ -103,26 +110,26 @@ class PayCrawler {
 
         // update data information
         $postfieldsInner = http_build_query([
-            '__EVENTTARGET'                         => '',
-            '__EVENTARGUMENT'                       => '',
-            '__VIEWSTATE'                           => $this->parseVerified('__VIEWSTATE', $html),
-            '__VIEWSTATEGENERATOR'                  => $this->parseVerified('__VIEWSTATEGENERATOR', $html),
-            '__SCROLLPOSITIONX'                     => $this->parseVerified('__SCROLLPOSITIONX', $html),
-            '__SCROLLPOSITIONY'                     => $this->parseVerified('__SCROLLPOSITIONY', $html),
-            '__PREVIOUSPAGE'                        => $this->parseVerified('__PREVIOUSPAGE', $html),
-            '_ctl0:ContentPlaceHolder1:YY1'         => strval(intval(date('Y'))-1911),
-            '_ctl0:ContentPlaceHolder1:MM1'         => '01',
-            '_ctl0:ContentPlaceHolder1:YY2'         => strval(intval(date('Y'))-1911),
-            '_ctl0:ContentPlaceHolder1:MM2'         => date('m'),
-            '_ctl0:ContentPlaceHolder1:id_no1'      => $this->account,
-            '_ctl0:ContentPlaceHolder1:memo'        => '',
-            '_ctl0:ContentPlaceHolder1:empl_name'   => '',
-            '_ctl0:ContentPlaceHolder1:Button3'     => '開始查詢',
+            '__EVENTTARGET'                       => '',
+            '__EVENTARGUMENT'                     => '',
+            '__VIEWSTATE'                         => $this->parseVerified('__VIEWSTATE', $html),
+            '__VIEWSTATEGENERATOR'                => $this->parseVerified('__VIEWSTATEGENERATOR', $html),
+            '__SCROLLPOSITIONX'                   => $this->parseVerified('__SCROLLPOSITIONX', $html),
+            '__SCROLLPOSITIONY'                   => $this->parseVerified('__SCROLLPOSITIONY', $html),
+            '__PREVIOUSPAGE'                      => $this->parseVerified('__PREVIOUSPAGE', $html),
+            '_ctl0:ContentPlaceHolder1:YY1'       => strval(intval(date('Y'))-1911),
+            '_ctl0:ContentPlaceHolder1:MM1'       => '01',
+            '_ctl0:ContentPlaceHolder1:YY2'       => strval(intval(date('Y'))-1911),
+            '_ctl0:ContentPlaceHolder1:MM2'       => date('m'),
+            '_ctl0:ContentPlaceHolder1:id_no1'    => $this->account,
+            '_ctl0:ContentPlaceHolder1:memo'      => '',
+            '_ctl0:ContentPlaceHolder1:empl_name' => '',
+            '_ctl0:ContentPlaceHolder1:Button3'   => '開始查詢',
         ]);
 
         curl_setopt_array($this->ch, [
-            CURLOPT_POST        => true,
-            CURLOPT_POSTFIELDS  => $postfieldsInner,
+            CURLOPT_POST       => true,
+            CURLOPT_POSTFIELDS => $postfieldsInner,
         ]);
 
         // posting the data page
@@ -135,7 +142,8 @@ class PayCrawler {
         return $html;
     }
 
-    public function parseResult (string $_html) : array {
+    public function parseResult (string $_html) : array 
+    {
         include_once('./simplehtmldom/simple_html_dom.php');
         $dom = new simple_html_dom();
 
@@ -153,7 +161,8 @@ class PayCrawler {
         return $res;
     }
 
-    public function databaseResult (object $_conf) : array {
+    public function databaseResult (object $_conf) : array 
+    {
         $conn = $this->connectDatabase($_conf);
 
         // get last entry from database
@@ -175,7 +184,8 @@ class PayCrawler {
         return $res;
     }
 
-    public function updateEntry(object $_conf, array $_data) {
+    public function updateEntry(object $_conf, array $_data) 
+    {
         $conn = $this->connectDatabase($_conf);
 
         // update database
@@ -187,7 +197,8 @@ class PayCrawler {
         $conn->close();
     }
 
-    private function parseVerified (string $_name, string $_html) : string  {
+    private function parseVerified (string $_name, string $_html) : string  
+    {
         $pattern = '~<input type="hidden" name="'.$_name.'" id="'.$_name.'" value="(.*?)" />~';
 
         preg_match($pattern, $_html, $values);
@@ -195,9 +206,10 @@ class PayCrawler {
         return $values[1] ?? '';
     }
 
-    private function connectDatabase (object $_conf) {
+    private function connectDatabase (object $_conf) 
+    {
         $conn = new mysqli($_conf->host, $_conf->user, $_conf->password, $_conf->table);
-        
+
         return $conn ?? null;
     }
 };
