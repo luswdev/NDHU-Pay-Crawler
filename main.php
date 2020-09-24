@@ -36,7 +36,6 @@ foreach ($users as $user) {
                     
                     // compare two entry is different or not
                     if ($res['last entry'] === $res['database']) {
-                        file_put_contents('cronlog.txt', date('Y/m/d H:i:s').' No new entry.'.PHP_EOL, FILE_APPEND);
                         $res['result'] = 'No new entry.';
                     } else {
                         $res['result'] = 'A new entry found.';
@@ -46,7 +45,6 @@ foreach ($users as $user) {
 
                         // connecting to telegram bot
                         file_get_contents('https://lusw.dev/tg/api/bot/pay/'.$user->id.'/'.$$res['last entry']['date'].'/'.$$res['last entry']['name'].'/'.$$res['last entry']['pay']);
-                        file_put_contents('cronlog.txt', date('Y/m/d H:i:s').' A new entry find.'.PHP_EOL, FILE_APPEND);
                     }
                 }
             } else {
