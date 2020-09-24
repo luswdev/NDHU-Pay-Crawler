@@ -44,7 +44,7 @@ foreach ($users as $user) {
                         $crawler->updateEntry($config->db, $res['last entry']);
 
                         // connecting to telegram bot
-                        file_get_contents('https://lusw.dev/tg/api/bot/pay/'.$user->id.'/'.$$res['last entry']['date'].'/'.$$res['last entry']['name'].'/'.$$res['last entry']['pay']);
+                        file_get_contents($config->botAPI.$user->id.'/'.$res['last entry']['date'].'/'.$res['last entry']['name'].'/'.$res['last entry']['pay']);
                     }
                 }
             } else {

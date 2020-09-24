@@ -1,5 +1,6 @@
 <?php
 class PayCrawler {
+    private $baseURL;
     private $loginPage;
     private $dataPage;
 
@@ -13,8 +14,9 @@ class PayCrawler {
         $this->tgId      = $_id;
         $this->account = $_account;
 
-        $this->loginPage = 'http://velociraptor.ndhu.edu.tw/MSalary/DeskTopDefault1.aspx';
-        $this->dataPage  = 'http://velociraptor.ndhu.edu.tw/MSalary/fmSary03.aspx';
+        $this->baseURL   = 'http://velociraptor.ndhu.edu.tw/MSalary';
+        $this->loginPage = '/DeskTopDefault1.aspx';
+        $this->dataPage  = '/fmSary03.aspx';
 
         $this->ch        = curl_init();
         $this->ckfile    = tempnam('/tmp', 'CURLCOOKIE');
@@ -29,7 +31,7 @@ class PayCrawler {
     public function getLoginPage () {
         // setup curl information
         curl_setopt_array($this->ch, [
-            CURLOPT_URL            => $this->loginPage,
+            CURLOPT_URL            => $this->baseURL.$this->loginPage,
             CURLOPT_COOKIEFILE     => $this->ckfile,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_RETURNTRANSFER => true,
@@ -53,7 +55,7 @@ class PayCrawler {
         ]);
         
         curl_setopt_array($this->ch, [
-            CURLOPT_REFERER     => $this->loginPage,
+            CURLOPT_REFERER     => $this->baseURL.$this->loginPage,
             CURLOPT_POST        => true,
             CURLOPT_POSTFIELDS  => $postfields,
         ]);
@@ -65,7 +67,7 @@ class PayCrawler {
 
     public function getDataPage () {
         curl_setopt_array($this->ch, [
-            CURLOPT_URL  => $this->dataPage,
+            CURLOPT_URL  => $this->baseURL.$this->dataPage,
             CURLOPT_POST => false,
         ]);
 
@@ -124,7 +126,7 @@ class PayCrawler {
     }
 
     public function databaseResult (object $_conf) : array {
-        $conn = $this->connDB($_conf);
+        $conn = $this->connectDatabase($_conf);
 
         // get last entry from database
         $query = 'SELECT last_date,last_name,last_pay FROM user_info WHERE tg_id=?';
@@ -146,12 +148,12 @@ class PayCrawler {
     }
 
     public function updateEntry(object $_conf, array $data) {
-        $conn = $this->connDB($_conf);
+        $conn = $this->connectDatabase($_conf);
 
         // update database
         $query = 'UPDATE user_info SET last_date=? , last_name=?, last_pay=? WHERE tg_id=?';
         $stmt  = $conn->prepare($query);
-        $stmt->bind_param('sssi', $data['date'], $data['time'], $data['pay'], $this->tgid);
+        $stmt->bind_param('sssi', $data['date'], $data['name'], $data['pay'], $this->tgId);
         $stmt->execute();
         $stmt->close();
         $conn->close();
@@ -165,13 +167,13 @@ class PayCrawler {
         return $values[1] ?? '';
     }
 
-    private function connDB (object $_conf) {
+    private function connectDatabase (object $_conf) {
         $DBHOST = $_conf->host;
         $DBUSER = $_conf->user;
         $DBPASS = $_conf->password;
         $DBNAME = $_conf->table;
-        $conn = new mysqli($DBHOST, $DBUSER, $DBPASS, $DBNAME);
 
+        $conn = new mysqli($DBHOST, $DBUSER, $DBPASS, $DBNAME);
         return $conn;
     }
 };
