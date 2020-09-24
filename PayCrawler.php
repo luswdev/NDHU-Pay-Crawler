@@ -51,7 +51,7 @@ class PayCrawler {
         $html = $this->getLoginPage();
 
         if ($html === false) {
-            $this->errorMsg = 'Getting login page failed:' . curl_error($this>ch);;
+            $this->errorMsg = 'Getting login page failed:' . curl_error($this->ch);;
             return $html;
         }
 
@@ -75,7 +75,7 @@ class PayCrawler {
         $html = curl_exec($this->ch);
 
         if ($html === false) {
-            $this->errorMsg = 'Submitting login page failed: ' . curl_error($this>ch);;
+            $this->errorMsg = 'Submitting login page failed: ' . curl_error($this->ch);;
         }
 
         return $html;
@@ -97,7 +97,7 @@ class PayCrawler {
         $html = $this->getDataPage();
 
         if ($html === false) {
-            $this->errorMsg = 'Getting data page failed: ' . curl_error($this>ch);;
+            $this->errorMsg = 'Getting data page failed: ' . curl_error($this->ch);;
             return $html;
         }
 
@@ -129,7 +129,7 @@ class PayCrawler {
         $html = curl_exec($this->ch);
 
         if ($html === false) {
-            $this->errorMsg = 'An error has occurred: ' . curl_error($this>ch);
+            $this->errorMsg = 'An error has occurred: ' . curl_error($this->ch);
         }
 
         return $html;
