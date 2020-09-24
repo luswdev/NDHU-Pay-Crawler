@@ -98,7 +98,7 @@ foreach ($users as $user) {
                     '_ctl0:ContentPlaceHolder1:MM1'         => "01",
                     '_ctl0:ContentPlaceHolder1:YY2'         => strval(intval(date('Y'))-1911),
                     '_ctl0:ContentPlaceHolder1:MM2'         => date('m'),
-                    '_ctl0:ContentPlaceHolder1:id_no1'      => 'C121536982',
+                    '_ctl0:ContentPlaceHolder1:id_no1'      => $user->account,
                     '_ctl0:ContentPlaceHolder1:memo'        => '',
                     '_ctl0:ContentPlaceHolder1:empl_name'   => '',
                     '_ctl0:ContentPlaceHolder1:Button3'     => '開始查詢',
