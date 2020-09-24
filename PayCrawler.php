@@ -10,6 +10,8 @@ class PayCrawler {
     private $ch;
     private $ckfile;
 
+    public $errorMsg;
+
     public function __construct (int $_id, string $_account) {
         $this->tgId      = $_id;
         $this->account = $_account;
@@ -21,6 +23,8 @@ class PayCrawler {
         $this->ch        = curl_init();
         $this->ckfile    = tempnam('/tmp', 'CURLCOOKIE');
         $this->useragent = $_SERVER['HTTP_USER_AGENT'];
+
+        $this->errorMsg = '';
     }
 
     public function __destruct () {
@@ -28,7 +32,7 @@ class PayCrawler {
         unlink($this->ckfile);
     }
 
-    public function getLoginPage () {
+    private function getLoginPage () {
         // setup curl information
         curl_setopt_array($this->ch, [
             CURLOPT_URL            => $this->baseURL.$this->loginPage,
@@ -43,13 +47,20 @@ class PayCrawler {
         return $html;
     }
 
-    public function login (string $_password, $_html) {
+    public function login (string $_password) {
+        $html = $this->getLoginPage();
+
+        if ($html === false) {
+            $this->errorMsg = 'Getting login page failed.';
+            return $html;
+        }
+
         // login page information
         $postfields = http_build_query([
             '__EVENTTARGET'         => 'password',
             '__EVENTARGUMENT'       => '',
-            '__VIEWSTATE'           => $this->parseVerified('__VIEWSTATE', $_html),
-            '__VIEWSTATEGENERATOR'  => $this->parseVerified('__VIEWSTATEGENERATOR', $_html),
+            '__VIEWSTATE'           => $this->parseVerified('__VIEWSTATE', $html),
+            '__VIEWSTATEGENERATOR'  => $this->parseVerified('__VIEWSTATEGENERATOR', $html),
             'email'                 => $this->account,
             'password'              => $_password,
         ]);
@@ -62,10 +73,15 @@ class PayCrawler {
 
         // submitting the login form
         $html = curl_exec($this->ch);
+
+        if ($html === false) {
+            $this->errorMsg = 'Submitting login page failed.';
+        }
+
         return $html;
     }
 
-    public function getDataPage () {
+    private function getDataPage () {
         curl_setopt_array($this->ch, [
             CURLOPT_URL  => $this->baseURL.$this->dataPage,
             CURLOPT_POST => false,
@@ -77,16 +93,23 @@ class PayCrawler {
         return $html;
     }
 
-    public function getData (string $_html) {
+    public function getData () {
+        $html = $this->getDataPage();
+
+        if ($html === false) {
+            $this->errorMsg = 'Getting data page failed.';
+            return $html;
+        }
+
         // update data information
         $postfieldsInner = http_build_query([
             '__EVENTTARGET'                         => '',
             '__EVENTARGUMENT'                       => '',
-            '__VIEWSTATE'                           => $this->parseVerified('__VIEWSTATE', $_html),
-            '__VIEWSTATEGENERATOR'                  => $this->parseVerified('__VIEWSTATEGENERATOR', $_html),
-            '__SCROLLPOSITIONX'                     => $this->parseVerified('__SCROLLPOSITIONX', $_html),
-            '__SCROLLPOSITIONY'                     => $this->parseVerified('__SCROLLPOSITIONY', $_html),
-            '__PREVIOUSPAGE'                        => $this->parseVerified('__PREVIOUSPAGE', $_html),
+            '__VIEWSTATE'                           => $this->parseVerified('__VIEWSTATE', $html),
+            '__VIEWSTATEGENERATOR'                  => $this->parseVerified('__VIEWSTATEGENERATOR', $html),
+            '__SCROLLPOSITIONX'                     => $this->parseVerified('__SCROLLPOSITIONX', $html),
+            '__SCROLLPOSITIONY'                     => $this->parseVerified('__SCROLLPOSITIONY', $html),
+            '__PREVIOUSPAGE'                        => $this->parseVerified('__PREVIOUSPAGE', $html),
             '_ctl0:ContentPlaceHolder1:YY1'         => strval(intval(date('Y'))-1911),
             '_ctl0:ContentPlaceHolder1:MM1'         => '01',
             '_ctl0:ContentPlaceHolder1:YY2'         => strval(intval(date('Y'))-1911),
@@ -104,6 +127,11 @@ class PayCrawler {
 
         // posting the data page
         $html = curl_exec($this->ch);
+
+        if ($html === false) {
+            $this->errorMsg = 'An error has occurred: ' . curl_error($this>ch);
+        }
+
         return $html;
     }
 

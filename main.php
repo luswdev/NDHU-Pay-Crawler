@@ -18,43 +18,31 @@ foreach ($users as $user) {
 
     $crawler = new PayCrawler($user->id, $user->account);
 
-    $html = $crawler->getLoginPage();
+    $html = $crawler->login($user->password);
     if ($html !== false) {
-        $html = $crawler->login($user->password, $html);
+            $html = $crawler->getData();
 
-        if ($html !== false) {
-            $html = $crawler->getDataPage();
-
-            if ($html !== false) {
-                $html = $crawler->getData($html);
-
-                if ($html === false) {
-                    $res['result'] = 'An error has occurred: ' . curl_error($ch);
-                } else {
-                    $res['last entry'] = $crawler->parseResult($html);
-                    $res['database']   = $crawler->databaseResult($config->db);
-                    
-                    // compare two entry is different or not
-                    if ($res['last entry'] === $res['database']) {
-                        $res['result'] = 'No new entry.';
-                    } else {
-                        $res['result'] = 'A new entry found.';
-
-                        // update database
-                        $crawler->updateEntry($config->db, $res['last entry']);
-
-                        // connecting to telegram bot
-                        file_get_contents($config->botAPI.$user->id.'/'.$res['last entry']['date'].'/'.$res['last entry']['name'].'/'.$res['last entry']['pay']);
-                    }
-                }
+            if ($html === false) {
+                $res['result'] = $crawler->errorMsg;
             } else {
-                $res['result'] = 'Getting data page failed.';
+                $res['last entry'] = $crawler->parseResult($html);
+                $res['database']   = $crawler->databaseResult($config->db);
+                    
+            // compare two entry is different or not
+            if ($res['last entry'] === $res['database']) {
+                $res['result'] = 'No new entry.';
+            } else {
+                $res['result'] = 'A new entry found.';
+
+                // update database
+                $crawler->updateEntry($config->db, $res['last entry']);
+
+                // connecting to telegram bot
+                file_get_contents($config->botAPI.$user->id.'/'.$res['last entry']['date'].'/'.$res['last entry']['name'].'/'.$res['last entry']['pay']);
             }
-        } else {
-            $res['result'] = 'Submitting login page failed.';
         }
     } else {
-        $res['result'] = 'Getting login page failed.';
+        $res['result'] = $crawler->errorMsg;
     }
 
     unset($crawler);
