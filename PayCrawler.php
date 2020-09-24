@@ -14,7 +14,7 @@ class PayCrawler {
 
     public function __construct (int $_id, string $_account) {
         $this->tgId      = $_id;
-        $this->account = $_account;
+        $this->account   = $_account;
 
         $this->baseURL   = 'http://velociraptor.ndhu.edu.tw/MSalary';
         $this->loginPage = '/DeskTopDefault1.aspx';
@@ -24,7 +24,7 @@ class PayCrawler {
         $this->ckfile    = tempnam('/tmp', 'CURLCOOKIE');
         $this->useragent = $_SERVER['HTTP_USER_AGENT'];
 
-        $this->errorMsg = '';
+        $this->errorMsg  = '';
     }
 
     public function __destruct () {
@@ -51,7 +51,7 @@ class PayCrawler {
         $html = $this->getLoginPage();
 
         if ($html === false) {
-            $this->errorMsg = 'Getting login page failed:' . curl_error($this->ch);;
+            $this->errorMsg = 'Getting login page failed:' . curl_error($this->ch);
             return $html;
         }
 
@@ -75,7 +75,7 @@ class PayCrawler {
         $html = curl_exec($this->ch);
 
         if ($html === false) {
-            $this->errorMsg = 'Submitting login page failed: ' . curl_error($this->ch);;
+            $this->errorMsg = 'Submitting login page failed: ' . curl_error($this->ch);
         }
 
         return $html;
@@ -97,7 +97,7 @@ class PayCrawler {
         $html = $this->getDataPage();
 
         if ($html === false) {
-            $this->errorMsg = 'Getting data page failed: ' . curl_error($this->ch);;
+            $this->errorMsg = 'Getting data page failed: ' . curl_error($this->ch);
             return $html;
         }
 
@@ -175,13 +175,13 @@ class PayCrawler {
         return $res;
     }
 
-    public function updateEntry(object $_conf, array $data) {
+    public function updateEntry(object $_conf, array $_data) {
         $conn = $this->connectDatabase($_conf);
 
         // update database
         $query = 'UPDATE user_info SET last_date=? , last_name=?, last_pay=? WHERE tg_id=?';
         $stmt  = $conn->prepare($query);
-        $stmt->bind_param('sssi', $data['date'], $data['name'], $data['pay'], $this->tgId);
+        $stmt->bind_param('sssi', $_data['date'], $_data['name'], $_data['pay'], $this->tgId);
         $stmt->execute();
         $stmt->close();
         $conn->close();
@@ -196,12 +196,8 @@ class PayCrawler {
     }
 
     private function connectDatabase (object $_conf) {
-        $DBHOST = $_conf->host;
-        $DBUSER = $_conf->user;
-        $DBPASS = $_conf->password;
-        $DBNAME = $_conf->table;
-
-        $conn = new mysqli($DBHOST, $DBUSER, $DBPASS, $DBNAME);
-        return $conn;
+        $conn = new mysqli($_conf->host, $_conf->user, $_conf->password, $_conf->table);
+        
+        return $conn ?? null;
     }
 };
