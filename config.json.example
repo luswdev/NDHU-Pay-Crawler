@@ -1,0 +1,15 @@
+{
+    "db": {
+        "table": "",
+        "user": "",
+        "password": "",
+        "host": ""
+    },
+    "users": [
+        {
+            "account": "",
+            "password": "",
+            "id": ""
+        }
+    ]
+}
