@@ -159,7 +159,7 @@ foreach ($users as $user) {
                         !strcmp($last_name, $db_last_name) &&
                         !strcmp($last_pay,  $db_last_pay)) {
                         echo date('Y/m/d H:i:s').' No new entry.';
-                        file_put_contents('cronlog.txt', date('Y/m/d H:i:s').' No new entry.\r\n', FILE_APPEND);
+                        file_put_contents('cronlog.txt', date('Y/m/d H:i:s').' No new entry.'.PHP_EOL, FILE_APPEND);
                     } else {
                         echo date('Y/m/d H:i:s').' A new entry found.';
 
@@ -172,7 +172,7 @@ foreach ($users as $user) {
 
                         // connecting to telegram bot
                         file_get_contents('https://lusw.dev/tg/api/bot/pay/'.$tg_id.'/'.$last_date.'/'.$last_name.'/'.$last_pay);
-                        file_put_contents('cronlog.txt', date('Y/m/d H:i:s').' A new entry find.\r\n', FILE_APPEND);
+                        file_put_contents('cronlog.txt', date('Y/m/d H:i:s').' A new entry find.'.PHP_EOL, FILE_APPEND);
                     }
                     
                     $conn->close();
