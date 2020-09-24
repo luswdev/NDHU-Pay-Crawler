@@ -49,4 +49,4 @@ foreach ($users as $user) {
     $allRes[] = $res;
 }
 
-echo json_encode($allRes, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+echo json_encode($allRes, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE).PHP_EOL;
