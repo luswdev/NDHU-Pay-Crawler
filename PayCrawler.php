@@ -11,6 +11,8 @@ class PayCrawler
 
     private $ch;
     private $ckfile;
+    private $useragent;
+    private $state;
 
     public $errorMsg;
 
@@ -26,6 +28,13 @@ class PayCrawler
         $this->ckfile    = tempnam('/tmp', 'CURLCOOKIE');
         $this->useragent = $_SERVER['HTTP_USER_AGENT'];
 
+        if (isset($this->useragent) && preg_match('/^(curl|wget)/i', $this->useragent)) {
+            $this->state = 'command';
+        }
+        else {
+            $this->state = 'browser';
+        }
+
         $this->errorMsg  = '';
     }
 
@@ -33,6 +42,10 @@ class PayCrawler
     {
         curl_close($this->ch);
         unlink($this->ckfile);
+    }
+
+    private function isBrowser() : bool {
+        return $this->state === 'browser';
     }
 
     private function getLoginPage () 
@@ -153,8 +166,8 @@ class PayCrawler
 
         $last_entry = $lists->nodes[0]->nodes[1];
         $res = array(
-            'date' => $last_entry->nodes[0]->nodes[0]->innertext,
-            'name' => $last_entry->nodes[2]->nodes[0]->innertext,
+            'date' => $this->isBrowser() ? $last_entry->nodes[0]->innertext : $last_entry->nodes[0]->nodes[0]->innertext,
+            'name' => $this->isBrowser() ? $last_entry->nodes[2]->innertext : $last_entry->nodes[2]->nodes[0]->innertext,
             'pay'  => $last_entry->nodes[3]->innertext
         );
 
