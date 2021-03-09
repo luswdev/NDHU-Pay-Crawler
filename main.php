@@ -5,8 +5,14 @@ include_once('./PayCrawler.php');
 $config = json_decode(file_get_contents('config.json'));
 $users = $config->users;
 
+$target = $_GET['id'] ?? false;
+
 $allRes = [];
-foreach ($users as $user) {
+foreach ($users as $user) {    
+    if ($target && strval($user->id) != $target) {
+        continue;
+    }
+
     $res = array(
         'time'          => date('Y.m.d H:i:s'),
         'user'          => $user->account,
@@ -33,7 +39,9 @@ foreach ($users as $user) {
                 $res['result'] = 'No new entry.';
 
                 // connecting to telegram bot
-                #file_get_contents($config->botAPI . $user->id);
+                if ($target) {
+                    file_get_contents($config->botAPI . $user->id);
+                }
             } else {
                 $res['result'] = 'A new entry found.';
 
