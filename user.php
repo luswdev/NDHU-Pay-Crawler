@@ -5,8 +5,14 @@ include_once('./PayCrawler.php');
 $config = json_decode(file_get_contents('config.json'));
 $users = $config->users;
 
+$target = $_GET['id'] ?? '';
+
 $allRes = [];
 foreach ($users as $user) {
+    if (strval($user->id) != $target) {
+        continue;
+    }
+    
     $res = array(
         'time'          => date('Y.m.d H:i:s'),
         'user'          => $user->account,
@@ -20,20 +26,20 @@ foreach ($users as $user) {
 
     $html = $crawler->login($user->password);
     if ($html !== false) {
-        $html = $crawler->getData();
-        
-        if ($html === false) {
-            $res['result'] = $crawler->errorMsg;
-        } else {
-            $res['last entry'] = $crawler->parseResult($html);
-            $res['database']   = $crawler->databaseResult($config->db);
-                
+            $html = $crawler->getData();
+
+            if ($html === false) {
+                $res['result'] = $crawler->errorMsg;
+            } else {
+                $res['last entry'] = $crawler->parseResult($html);
+                $res['database']   = $crawler->databaseResult($config->db);
+                    
             // compare two entry is different or not
             if ($res['last entry'] === $res['database']) {
                 $res['result'] = 'No new entry.';
 
                 // connecting to telegram bot
-                #file_get_contents($config->botAPI . $user->id);
+                file_get_contents($config->botAPI . $user->id);
             } else {
                 $res['result'] = 'A new entry found.';
 

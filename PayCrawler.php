@@ -1,10 +1,14 @@
 <?php
+require (__DIR__.'/../crypt/main.php');
+
+use \Crypter\Crypter;
+
 class PayCrawler 
 {
-    const BASE_URL ='http://velociraptor.ndhu.edu.tw/MSalary';
+    const BASE_URL = 'http://velociraptor.ndhu.edu.tw/MSalary';
 
-    private $loginPage;
-    private $dataPage;
+    private $loginPage = '/DeskTopDefault1.aspx';
+    private $dataPage  = '/fmSary03.aspx';
 
     private $account;
     private $tgId;
@@ -14,15 +18,12 @@ class PayCrawler
     private $useragent;
     private $state;
 
-    public $errorMsg;
+    public $errorMsg = '';
 
     public function __construct (int $_id, string $_account) 
     {
         $this->tgId      = $_id;
         $this->account   = $_account;
-
-        $this->loginPage = '/DeskTopDefault1.aspx';
-        $this->dataPage  = '/fmSary03.aspx';
 
         $this->ch        = curl_init();
         $this->ckfile    = tempnam('/tmp', 'CURLCOOKIE');
@@ -30,12 +31,9 @@ class PayCrawler
 
         if (isset($this->useragent) && preg_match('/^(curl|wget)/i', $this->useragent)) {
             $this->state = 'command';
-        }
-        else {
+        } else {
             $this->state = 'browser';
         }
-
-        $this->errorMsg  = '';
     }
 
     public function __destruct () 
@@ -44,7 +42,8 @@ class PayCrawler
         unlink($this->ckfile);
     }
 
-    private function isBrowser() : bool {
+    private function isBrowser () : bool 
+    {
         return $this->state === 'browser';
     }
 
@@ -52,7 +51,7 @@ class PayCrawler
     {
         // setup curl information
         curl_setopt_array($this->ch, [
-            CURLOPT_URL            => self::BASE_URL.$this->loginPage,
+            CURLOPT_URL            => self::BASE_URL . $this->loginPage,
             CURLOPT_COOKIEFILE     => $this->ckfile,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_RETURNTRANSFER => true,
@@ -73,6 +72,8 @@ class PayCrawler
             return $html;
         }
 
+        $crypter = new Crypter();
+
         // login page information
         $postfields = http_build_query([
             '__EVENTTARGET'        => 'password',
@@ -80,11 +81,11 @@ class PayCrawler
             '__VIEWSTATE'          => $this->parseVerified('__VIEWSTATE', $html),
             '__VIEWSTATEGENERATOR' => $this->parseVerified('__VIEWSTATEGENERATOR', $html),
             'email'                => $this->account,
-            'password'             => $_password,
+            'password'             => $crypter->decrypt($_password)
         ]);
         
         curl_setopt_array($this->ch, [
-            CURLOPT_REFERER    => self::BASE_URL.$this->loginPage,
+            CURLOPT_REFERER    => self::BASE_URL . $this->loginPage,
             CURLOPT_POST       => true,
             CURLOPT_POSTFIELDS => $postfields,
         ]);
@@ -102,7 +103,7 @@ class PayCrawler
     private function getDataPage () 
     {
         curl_setopt_array($this->ch, [
-            CURLOPT_URL  => self::BASE_URL.$this->dataPage,
+            CURLOPT_URL  => self::BASE_URL . $this->dataPage,
             CURLOPT_POST => false,
         ]);
 
@@ -130,9 +131,9 @@ class PayCrawler
             '__SCROLLPOSITIONX'                   => $this->parseVerified('__SCROLLPOSITIONX', $html),
             '__SCROLLPOSITIONY'                   => $this->parseVerified('__SCROLLPOSITIONY', $html),
             '__PREVIOUSPAGE'                      => $this->parseVerified('__PREVIOUSPAGE', $html),
-            '_ctl0:ContentPlaceHolder1:YY1'       => strval(intval(date('Y'))-1911),
+            '_ctl0:ContentPlaceHolder1:YY1'       => strval(intval(date('Y')) - 1911 - 5), # start search from 5 years ago
             '_ctl0:ContentPlaceHolder1:MM1'       => '01',
-            '_ctl0:ContentPlaceHolder1:YY2'       => strval(intval(date('Y'))-1911),
+            '_ctl0:ContentPlaceHolder1:YY2'       => strval(intval(date('Y')) - 1911),
             '_ctl0:ContentPlaceHolder1:MM2'       => date('m'),
             '_ctl0:ContentPlaceHolder1:id_no1'    => $this->account,
             '_ctl0:ContentPlaceHolder1:memo'      => '',
@@ -164,11 +165,13 @@ class PayCrawler
         $dom->load($_html);
         $lists = $dom->getElementById('PrintArea');
 
+        // when user agent are not browser, result list will wrap by <font></font>
+        // so we need to detect user agent, and add nodes[0] to jump into <font></font>
         $last_entry = $lists->nodes[0]->nodes[1];
         $res = array(
             'date' => $this->isBrowser() ? $last_entry->nodes[0]->innertext : $last_entry->nodes[0]->nodes[0]->innertext,
             'name' => $this->isBrowser() ? $last_entry->nodes[2]->innertext : $last_entry->nodes[2]->nodes[0]->innertext,
-            'pay'  => $last_entry->nodes[3]->innertext
+            'pay'  => $last_entry->nodes[3]->innertext,
         );
 
         return $res;
@@ -179,7 +182,7 @@ class PayCrawler
         $conn = $this->connectDatabase($_conf);
 
         // get last entry from database
-        $query = 'SELECT last_date,last_name,last_pay FROM user_info WHERE tg_id=?';
+        $query = 'SELECT last_date, last_name, last_pay FROM user_info WHERE tg_id=?';
         $stmt = $conn->prepare($query);
         $stmt->bind_param('i', $this->tgId);
         $stmt->execute();
@@ -191,7 +194,7 @@ class PayCrawler
         $res = array(
             'date' => $db_last_date,
             'name' => $db_last_name,
-            'pay'  => $db_last_pay 
+            'pay'  => $db_last_pay,
         );
 
         return $res;
@@ -201,18 +204,36 @@ class PayCrawler
     {
         $conn = $this->connectDatabase($_conf);
 
-        // update database
-        $query = 'UPDATE user_info SET last_date=? , last_name=?, last_pay=? WHERE tg_id=?';
+        $query = 'SELECT last_date FROM user_info WHERE tg_id=?';
         $stmt  = $conn->prepare($query);
-        $stmt->bind_param('sssi', $_data['date'], $_data['name'], $_data['pay'], $this->tgId);
+        $stmt->bind_param('i', $this->tgId);
         $stmt->execute();
+        $stmt->bind_result($db_last_date);
+        $stmt->fetch();
         $stmt->close();
-        $conn->close();
+
+        // update database
+        if ($db_last_date) {
+            $query = 'UPDATE user_info SET last_date=? , last_name=?, last_pay=? WHERE tg_id=?';
+            $stmt  = $conn->prepare($query);
+            $stmt->bind_param('sssi', $_data['date'], $_data['name'], $_data['pay'], $this->tgId);
+            $stmt->execute();
+            $stmt->close();
+            $conn->close();
+        } else {
+            $query = 'INSERT INTO user_info(last_date, last_name, last_pay, tg_id) VALUES (?, ?, ?, ?)';
+            $stmt  = $conn->prepare($query);
+            $stmt->bind_param('sssi', $_data['date'], $_data['name'], $_data['pay'], $this->tgId);
+            $stmt->execute();
+            $stmt->close();
+            $conn->close();
+            
+        }
     }
 
     private function parseVerified (string $_name, string $_html) : string  
     {
-        $pattern = '~<input type="hidden" name="'.$_name.'" id="'.$_name.'" value="(.*?)" />~';
+        $pattern = '~<input type="hidden" name="' . $_name . '" id="' . $_name . '" value="(.*?)" />~';
 
         preg_match($pattern, $_html, $values);
 

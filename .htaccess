@@ -1,1 +1,7 @@
+DirectoryIndex /n-pay/main.php
+
 Redirect 403 /n-pay/config.json
+
+RewriteEngine On
+RewriteBase /n-pay
+RewriteRule ^([0-9]+)$  user.php?id=$1 [NC,L]
