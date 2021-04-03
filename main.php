@@ -1,6 +1,8 @@
 <?php
 include_once('./PayCrawler.php');
 
+header('Content-Type: text/plain; charset=utf-8');
+
 // get user lists
 $config = json_decode(file_get_contents('config.json'));
 $users = $config->users;
