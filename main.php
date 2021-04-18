@@ -10,7 +10,7 @@ $users = $config->users;
 $target = $_GET['id'] ?? false;
 
 $allRes = [];
-foreach ($users as $user) {    
+foreach ($users as $user) {
     if ($target && strval($user->id) != $target) {
         continue;
     }

@@ -3,7 +3,7 @@ require (__DIR__.'/../crypt/main.php');
 
 use \Crypter\Crypter;
 
-class PayCrawler 
+class PayCrawler
 {
     const BASE_URL = 'http://velociraptor.ndhu.edu.tw/MSalary';
 
@@ -20,7 +20,7 @@ class PayCrawler
 
     public $errorMsg = '';
 
-    public function __construct (int $_id, string $_account) 
+    public function __construct (int $_id, string $_account)
     {
         $this->tgId      = $_id;
         $this->account   = $_account;
@@ -36,18 +36,18 @@ class PayCrawler
         }
     }
 
-    public function __destruct () 
+    public function __destruct ()
     {
         curl_close($this->ch);
         unlink($this->ckfile);
     }
 
-    private function isBrowser () : bool 
+    private function isBrowser () : bool
     {
         return $this->state === 'browser';
     }
 
-    private function getLoginPage () 
+    private function getLoginPage ()
     {
         // setup curl information
         curl_setopt_array($this->ch, [
@@ -63,7 +63,7 @@ class PayCrawler
         return $html;
     }
 
-    public function login (string $_password) 
+    public function login (string $_password)
     {
         $html = $this->getLoginPage();
 
@@ -100,7 +100,7 @@ class PayCrawler
         return $html;
     }
 
-    private function getDataPage () 
+    private function getDataPage ()
     {
         curl_setopt_array($this->ch, [
             CURLOPT_URL  => self::BASE_URL . $this->dataPage,
@@ -113,7 +113,7 @@ class PayCrawler
         return $html;
     }
 
-    public function getData () 
+    public function getData ()
     {
         $html = $this->getDataPage();
 
@@ -131,7 +131,7 @@ class PayCrawler
             '__SCROLLPOSITIONX'                   => $this->parseVerified('__SCROLLPOSITIONX', $html),
             '__SCROLLPOSITIONY'                   => $this->parseVerified('__SCROLLPOSITIONY', $html),
             '__PREVIOUSPAGE'                      => $this->parseVerified('__PREVIOUSPAGE', $html),
-            '_ctl0:ContentPlaceHolder1:YY1'       => strval(intval(date('Y')) - 1911 - 5), # start search from 5 years ago
+            '_ctl0:ContentPlaceHolder1:YY1'       => strval(intval(date('Y')) - 1911 - 5), // start search from 5 years ago
             '_ctl0:ContentPlaceHolder1:MM1'       => '01',
             '_ctl0:ContentPlaceHolder1:YY2'       => strval(intval(date('Y')) - 1911),
             '_ctl0:ContentPlaceHolder1:MM2'       => date('m'),
@@ -156,7 +156,7 @@ class PayCrawler
         return $html;
     }
 
-    public function parseResult (string $_html) : array 
+    public function parseResult (string $_html) : array
     {
         include_once('./simplehtmldom/simple_html_dom.php');
         $dom = new simple_html_dom();
@@ -177,7 +177,7 @@ class PayCrawler
         return $res;
     }
 
-    public function databaseResult (object $_conf) : array 
+    public function databaseResult (object $_conf) : array
     {
         $conn = $this->connectDatabase($_conf);
 
@@ -200,7 +200,7 @@ class PayCrawler
         return $res;
     }
 
-    public function updateEntry(object $_conf, array $_data) 
+    public function updateEntry(object $_conf, array $_data)
     {
         $conn = $this->connectDatabase($_conf);
 
@@ -231,7 +231,7 @@ class PayCrawler
         }
     }
 
-    private function parseVerified (string $_name, string $_html) : string  
+    private function parseVerified (string $_name, string $_html) : string
     {
         $pattern = '~<input type="hidden" name="' . $_name . '" id="' . $_name . '" value="(.*?)" />~';
 
@@ -240,10 +240,12 @@ class PayCrawler
         return $values[1] ?? '';
     }
 
-    private function connectDatabase (object $_conf) 
+    private function connectDatabase (object $_conf)
     {
         $conn = new mysqli($_conf->host, $_conf->user, $_conf->password, $_conf->table);
 
         return $conn ?? null;
     }
 };
+
+?>
