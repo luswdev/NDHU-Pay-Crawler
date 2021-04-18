@@ -47,14 +47,17 @@ foreach ($users as $user) {
             } else {
                 $res['result'] = 'A new entry found.';
 
+                $resName = str_replace("/", " ", $res['last entry']['name']);
+
                 // update database
                 $crawler->updateEntry($config->db, $res['last entry']);
+                $url = $config->botAPI . $user->id . '/'
+                                       . $res['last entry']['date'] . '/'
+                                       . $res['last entry']['pay'] . '/'
+                                       . urlencode($resName);
 
                 // connecting to telegram bot
-                file_get_contents($config->botAPI . $user->id . '/'
-                                                  . $res['last entry']['date'] . '/'
-                                                  . $res['last entry']['name'] . '/'
-                                                  . $res['last entry']['pay']);
+                file_get_contents($url);
             }
         }
     } else {
@@ -66,3 +69,26 @@ foreach ($users as $user) {
 }
 
 echo json_encode($allRes, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE).PHP_EOL;
+
+$logFile = __DIR__ . '/logs/' . date('Y');
+if (!file_exists($logFile)) {
+    mkdir($logFile);
+}
+
+$logFile .= '/' . date('m');
+if (!file_exists($logFile)) {
+    mkdir($logFile);
+}
+
+$logFile .= '/PayCrawler-' . date('Y.m.d') . '.log';
+if (!file_exists($logFile)) {
+    touch($logFile);
+}
+
+$logJson = json_decode(file_get_contents($logFile));
+
+$logJson[] = $allRes;
+file_put_contents($logFile,
+    json_encode($logJson, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
+?>
